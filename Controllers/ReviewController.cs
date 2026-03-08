@@ -41,6 +41,29 @@ namespace ReviewAPI.Controllers
             return Ok(reviews);
         }
 
+        // GET api/reviews/user — hämta inloggad användares recensioner
+        [HttpGet("user")]
+        [Authorize]
+        public async Task<IActionResult> GetUserReviews()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var reviews = await _context.Reviews
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.BookId,
+                    r.Text,
+                    r.Rating,
+                    r.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(reviews);
+        }
+
         // GET api/reviews/top-rated — hämta 4 högst betygsatta böcker
         [HttpGet("top-rated")]
         public async Task<IActionResult> GetTopRated()
