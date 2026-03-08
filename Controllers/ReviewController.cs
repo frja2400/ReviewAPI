@@ -131,6 +131,24 @@ namespace ReviewAPI.Controllers
             return Ok(review);
         }
 
+        // GET api/reviews/{bookId}/user — hämta inloggad användares recension för en specifik bok
+        [HttpGet("{bookId}/user")]
+        [Authorize]
+        public async Task<IActionResult> GetUserReviewForBook(string bookId)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var review = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.BookId == bookId && r.UserId == userId);
+
+            if (review == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(review);
+        }
+
         // PUT api/reviews/{id} — redigera recension (kräver ägande)
         [HttpPut("{id}")]
         [Authorize]
