@@ -65,23 +65,20 @@ namespace ReviewAPI.Controllers
         public async Task<IActionResult> GetLatest()
         {
             var latest = await _context.Reviews
-                .Include(r => r.User)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            var uniqueBooks = latest
                 .GroupBy(r => r.BookId)
                 .Select(g => new
                 {
                     BookId = g.Key,
-                    LatestReview = g.OrderByDescending(r => r.CreatedAt).First()
+                    CreatedAt = g.First().CreatedAt
                 })
-                .OrderByDescending(g => g.LatestReview.CreatedAt)
                 .Take(4)
-                .Select(g => new
-                {
-                    g.BookId,
-                    g.LatestReview.CreatedAt
-                })
-                .ToListAsync();
+                .ToList();
 
-            return Ok(latest);
+            return Ok(uniqueBooks);
         }
 
         // POST api/reviews — skapa recension (kräver inloggning)
