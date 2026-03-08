@@ -1,108 +1,177 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReviewAPI.Data;
 using ReviewAPI.Models;
+using System.Security.Claims;
 
 namespace ReviewAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class ReviewController : ControllerBase
+    [Route("api/[controller]")]
+    public class ReviewsController : ControllerBase
     {
         private readonly AppDbContext _context;
 
-        public ReviewController(AppDbContext context)
+        public ReviewsController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: api/Review
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Review>>> GetReviews()
+        // GET api/reviews/{bookId} — hämta alla recensioner för en bok
+        [HttpGet("{bookId}")]
+        public async Task<IActionResult> GetReviewsByBook(string bookId)
         {
-            return await _context.Reviews.ToListAsync();
-        }
-
-        // GET: api/Review/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Review>> GetReview(int id)
-        {
-            var review = await _context.Reviews.FindAsync(id);
-
-            if (review == null)
-            {
-                return NotFound();
-            }
-
-            return review;
-        }
-
-        // PUT: api/Review/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutReview(int id, Review review)
-        {
-            if (id != review.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(review).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ReviewExists(id))
+            var reviews = await _context.Reviews
+                .Include(r => r.User)
+                .Where(r => r.BookId == bookId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                    r.Id,
+                    r.BookId,
+                    r.Text,
+                    r.Rating,
+                    r.CreatedAt,
+                    r.UserId,
+                    Username = r.User.Username
+                })
+                .ToListAsync();
 
-            return NoContent();
+            return Ok(reviews);
         }
 
-        // POST: api/Review
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // GET api/reviews/top-rated — hämta 4 högst betygsatta böcker
+        [HttpGet("top-rated")]
+        public async Task<IActionResult> GetTopRated()
+        {
+            var topRated = await _context.Reviews
+                .GroupBy(r => r.BookId)
+                .Select(g => new
+                {
+                    BookId = g.Key,
+                    AverageRating = g.Average(r => r.Rating),
+                    ReviewCount = g.Count()
+                })
+                .OrderByDescending(g => g.AverageRating)
+                .Take(4)
+                .ToListAsync();
+
+            return Ok(topRated);
+        }
+
+        // GET api/reviews/latest — hämta 4 senast recenserade böcker
+        [HttpGet("latest")]
+        public async Task<IActionResult> GetLatest()
+        {
+            var latest = await _context.Reviews
+                .Include(r => r.User)
+                .GroupBy(r => r.BookId)
+                .Select(g => new
+                {
+                    BookId = g.Key,
+                    LatestReview = g.OrderByDescending(r => r.CreatedAt).First()
+                })
+                .OrderByDescending(g => g.LatestReview.CreatedAt)
+                .Take(4)
+                .Select(g => new
+                {
+                    g.BookId,
+                    g.LatestReview.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(latest);
+        }
+
+        // POST api/reviews — skapa recension (kräver inloggning)
         [HttpPost]
-        public async Task<ActionResult<Review>> PostReview(Review review)
+        [Authorize]
+        public async Task<IActionResult> CreateReview([FromBody] ReviewRequest request)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            // Kontrollera att användaren inte redan recenserat denna bok
+            if (_context.Reviews.Any(r => r.BookId == request.BookId && r.UserId == userId))
+            {
+                return BadRequest("Du har redan recenserat denna bok");
+            }
+
+            var review = new Review
+            {
+                BookId = request.BookId,
+                UserId = userId,
+                Text = request.Text,
+                Rating = request.Rating
+            };
+
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetReview", new { id = review.Id }, review);
+            return Ok(review);
         }
 
-        // DELETE: api/Review/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReview(int id)
+        // PUT api/reviews/{id} — redigera recension (kräver ägande)
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateReview(int id, [FromBody] ReviewRequest request)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
             var review = await _context.Reviews.FindAsync(id);
+
             if (review == null)
             {
-                return NotFound();
+                return NotFound("Recensionen hittades inte");
+            }
+
+            // Kontrollera att användaren äger recensionen
+            if (review.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            review.Text = request.Text;
+            review.Rating = request.Rating;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(review);
+        }
+
+        // DELETE api/reviews/{id} — radera recension (kräver ägande eller admin)
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteReview(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userRole = User.FindFirst(ClaimTypes.Role)!.Value;
+
+            var review = await _context.Reviews.FindAsync(id);
+
+            if (review == null)
+            {
+                return NotFound("Recensionen hittades inte");
+            }
+
+            // Kontrollera att användaren äger recensionen eller är admin
+            if (review.UserId != userId && userRole != "admin")
+            {
+                return Forbid();
             }
 
             _context.Reviews.Remove(review);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Recensionen raderades");
         }
+    }
 
-        private bool ReviewExists(int id)
-        {
-            return _context.Reviews.Any(e => e.Id == id);
-        }
+    // Klass för att ta emot recensionsdata från frontend
+    public class ReviewRequest
+    {
+        public string BookId { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public int Rating { get; set; }
     }
 }

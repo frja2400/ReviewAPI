@@ -1,108 +1,86 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReviewAPI.Data;
 using ReviewAPI.Models;
+using System.Security.Claims;
 
 namespace ReviewAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class FavoriteController : ControllerBase
+    [Route("api/[controller]")]
+    [Authorize]
+    public class FavoritesController : ControllerBase
     {
         private readonly AppDbContext _context;
 
-        public FavoriteController(AppDbContext context)
+        public FavoritesController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: api/Favorite
+        // GET api/favorites — hämta alla favoriter för inloggad användare
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Favorite>>> GetFavorites()
+        public async Task<IActionResult> GetFavorites()
         {
-            return await _context.Favorites.ToListAsync();
-        }
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        // GET: api/Favorite/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Favorite>> GetFavorite(int id)
-        {
-            var favorite = await _context.Favorites.FindAsync(id);
-
-            if (favorite == null)
-            {
-                return NotFound();
-            }
-
-            return favorite;
-        }
-
-        // PUT: api/Favorite/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutFavorite(int id, Favorite favorite)
-        {
-            if (id != favorite.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(favorite).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FavoriteExists(id))
+            var favorites = await _context.Favorites
+                .Where(f => f.UserId == userId)
+                .OrderByDescending(f => f.AddedAt)
+                .Select(f => new
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                    f.Id,
+                    f.BookId,
+                    f.AddedAt
+                })
+                .ToListAsync();
 
-            return NoContent();
+            return Ok(favorites);
         }
 
-        // POST: api/Favorite
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Favorite>> PostFavorite(Favorite favorite)
+        // POST api/favorites/{bookId} — lägg till favorit
+        [HttpPost("{bookId}")]
+        public async Task<IActionResult> AddFavorite(string bookId)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            // Kontrollera att boken inte redan är en favorit
+            if (_context.Favorites.Any(f => f.BookId == bookId && f.UserId == userId))
+            {
+                return BadRequest("Boken finns redan i dina favoriter");
+            }
+
+            var favorite = new Favorite
+            {
+                BookId = bookId,
+                UserId = userId
+            };
+
             _context.Favorites.Add(favorite);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetFavorite", new { id = favorite.Id }, favorite);
+            return Ok(favorite);
         }
 
-        // DELETE: api/Favorite/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFavorite(int id)
+        // DELETE api/favorites/{bookId} — ta bort favorit
+        [HttpDelete("{bookId}")]
+        public async Task<IActionResult> DeleteFavorite(string bookId)
         {
-            var favorite = await _context.Favorites.FindAsync(id);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var favorite = await _context.Favorites
+                .FirstOrDefaultAsync(f => f.BookId == bookId && f.UserId == userId);
+
             if (favorite == null)
             {
-                return NotFound();
+                return NotFound("Favoriten hittades inte");
             }
 
             _context.Favorites.Remove(favorite);
             await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
-
-        private bool FavoriteExists(int id)
-        {
-            return _context.Favorites.Any(e => e.Id == id);
+            return Ok("Favoriten raderades");
         }
     }
 }
