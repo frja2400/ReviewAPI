@@ -78,10 +78,10 @@ namespace ReviewAPI.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim("id", user.Id.ToString()),
+                new Claim("username", user.Username),
+                new Claim("email", user.Email),
+                new Claim("role", user.Role)
             };
 
             var token = new JwtSecurityToken(

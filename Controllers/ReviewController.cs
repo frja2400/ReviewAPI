@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReviewAPI.Data;
 using ReviewAPI.Models;
-using System.Security.Claims;
 
 namespace ReviewAPI.Controllers
 {
@@ -46,7 +45,7 @@ namespace ReviewAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserReviews()
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             var reviews = await _context.Reviews
                 .Where(r => r.UserId == userId)
@@ -109,7 +108,7 @@ namespace ReviewAPI.Controllers
         [Authorize]
         public async Task<IActionResult> CreateReview([FromBody] ReviewRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             // Kontrollera att användaren inte redan recenserat denna bok
             if (_context.Reviews.Any(r => r.BookId == request.BookId && r.UserId == userId))
@@ -136,7 +135,7 @@ namespace ReviewAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetUserReviewForBook(string bookId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             var review = await _context.Reviews
                 .FirstOrDefaultAsync(r => r.BookId == bookId && r.UserId == userId);
@@ -154,7 +153,7 @@ namespace ReviewAPI.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateReview(int id, [FromBody] ReviewRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             var review = await _context.Reviews.FindAsync(id);
 
@@ -182,8 +181,8 @@ namespace ReviewAPI.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteReview(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var userRole = User.FindFirst(ClaimTypes.Role)!.Value;
+            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var userRole = User.FindFirst("role")!.Value;
 
             var review = await _context.Reviews.FindAsync(id);
 

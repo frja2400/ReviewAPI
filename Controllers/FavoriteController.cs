@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReviewAPI.Data;
 using ReviewAPI.Models;
-using System.Security.Claims;
 
 namespace ReviewAPI.Controllers
 {
@@ -23,7 +22,7 @@ namespace ReviewAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFavorites()
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             var favorites = await _context.Favorites
                 .Where(f => f.UserId == userId)
@@ -43,7 +42,7 @@ namespace ReviewAPI.Controllers
         [HttpPost("{bookId}")]
         public async Task<IActionResult> AddFavorite(string bookId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             // Kontrollera att boken inte redan är en favorit
             if (_context.Favorites.Any(f => f.BookId == bookId && f.UserId == userId))
@@ -67,7 +66,7 @@ namespace ReviewAPI.Controllers
         [HttpDelete("{bookId}")]
         public async Task<IActionResult> DeleteFavorite(string bookId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = int.Parse(User.FindFirst("id")!.Value);
 
             var favorite = await _context.Favorites
                 .FirstOrDefaultAsync(f => f.BookId == bookId && f.UserId == userId);

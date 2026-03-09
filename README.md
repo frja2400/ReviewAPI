@@ -9,7 +9,7 @@ En liveversion av API:et finns tillgänglig på följande URL:
 
 ## Installation
 
-API:et använder SQLite för datalagring. För att installera och köra lokalt:
+För att installera och köra lokalt:
 
 * `git clone https://github.com/frja2400/ReviewAPI.git`
 * `cd ReviewAPI`

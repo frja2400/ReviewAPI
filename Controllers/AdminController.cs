@@ -87,7 +87,7 @@ namespace ReviewAPI.Controllers
             }
 
             // Kontrollera att admin inte raderar sig själv
-            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            var currentUserId = int.Parse(User.FindFirst("id")!.Value);
             if (user.Id == currentUserId)
             {
                 return BadRequest("Du kan inte radera ditt eget adminkonto");
