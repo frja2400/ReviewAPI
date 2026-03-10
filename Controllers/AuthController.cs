@@ -25,17 +25,20 @@ namespace ReviewAPI.Controllers
         [HttpPost("register")]
         public IActionResult Register([FromBody] RegisterRequest request)
         {
+            // Validera lösenord
+            if (request.Password.Length < 8)
+                return BadRequest("Lösenordet måste vara minst 8 tecken");
+
+            if (!request.Password.Any(char.IsDigit))
+                return BadRequest("Lösenordet måste innehålla minst en siffra");
+
             // Kontrollera att email inte redan används
             if (_context.Users.Any(u => u.Email == request.Email))
-            {
                 return BadRequest("Email är redan registrerad");
-            }
 
             // Kontrollera att användarnamn inte redan används
             if (_context.Users.Any(u => u.Username == request.Username))
-            {
                 return BadRequest("Användarnamnet är redan taget");
-            }
 
             // Skapa ny användare med hashat lösenord
             var user = new User
