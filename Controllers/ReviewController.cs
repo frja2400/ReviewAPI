@@ -63,7 +63,7 @@ namespace ReviewAPI.Controllers
             return Ok(reviews);
         }
 
-        // GET api/reviews/top-rated — hämta 5 högst betygsatta böcker
+        // GET api/reviews/top-rated — hämta högst betygsatta böcker
         [HttpGet("top-rated")]
         public async Task<IActionResult> GetTopRated()
         {
@@ -76,13 +76,13 @@ namespace ReviewAPI.Controllers
                     ReviewCount = g.Count()
                 })
                 .OrderByDescending(g => g.AverageRating)
-                .Take(5)
+                .Take(8)
                 .ToListAsync();
 
             return Ok(topRated);
         }
 
-        // GET api/reviews/latest — hämta 5 senast recenserade böcker
+        // GET api/reviews/latest — hämta senast recenserade böcker
         [HttpGet("latest")]
         public async Task<IActionResult> GetLatest()
         {
@@ -97,7 +97,7 @@ namespace ReviewAPI.Controllers
                     BookId = g.Key,
                     CreatedAt = g.First().CreatedAt
                 })
-                .Take(5)
+                .Take(8)
                 .ToList();
 
             return Ok(uniqueBooks);
@@ -182,7 +182,7 @@ namespace ReviewAPI.Controllers
         public async Task<IActionResult> DeleteReview(int id)
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            var userRole = User.FindFirst("role")!.Value;
+            var userRole = User.FindFirst("role")?.Value ?? "";
 
             var review = await _context.Reviews.FindAsync(id);
 
