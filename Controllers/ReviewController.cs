@@ -182,7 +182,7 @@ namespace ReviewAPI.Controllers
         public async Task<IActionResult> DeleteReview(int id)
         {
             var userId = int.Parse(User.FindFirst("id")!.Value);
-            var userRole = User.FindFirst("role")?.Value ?? "";
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
 
             var review = await _context.Reviews.FindAsync(id);
 

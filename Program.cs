@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Registrera API-controllers
 builder.Services.AddControllers();
 
+builder.Services.AddMemoryCache();
+
 // Lägg till DbContext och konfigurera SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
