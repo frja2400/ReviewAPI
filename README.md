@@ -80,8 +80,8 @@ public class Favorite
 | Metod | Ändpunkt | Beskrivning |
 |-------|----------|-------------|
 | GET | `/api/reviews/{bookId}` | Hämtar alla recensioner för en bok |
-| GET | `/api/reviews/top-rated` | Hämtar 4 högst betygsatta böcker |
-| GET | `/api/reviews/latest` | Hämtar 4 senast recenserade böcker |
+| GET | `/api/reviews/top-rated` | Hämtar 8 högst betygsatta böcker |
+| GET | `/api/reviews/latest` | Hämtar 8 senast recenserade böcker |
 | GET | `/api/reviews/user` | Hämtar inloggad användares recensioner |
 | GET | `/api/reviews/{bookId}/user` | Hämtar inloggad användares recension för en specifik bok |
 | POST | `/api/reviews` | Skapar ny recension |
@@ -110,6 +110,11 @@ API:et validerar inkommande data med Data Annotations:
 * `Text` är obligatorisk för recensioner.
 * `Rating` måste vara mellan 1 och 5.
 * En användare kan bara lämna en recension per bok.
+* Lösenord för användare måste vara minst 8 tecken och innehålla minst en siffra.
+
+### Cascade Delete
+
+När en användare raderas tas även användarens recensioner och favoriter bort automatiskt via cascade delete.
 
 ## CORS
 
