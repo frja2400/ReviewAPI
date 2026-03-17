@@ -5,7 +5,7 @@ Backend REST API för FOLIO – en bokrecensionsplattform som hanterar sökning 
 
 ## Länk
 
-En liveversion av API:et finns tillgänglig på följande URL:
+En liveversion av API:et finns tillgänglig på följande URL: **http://159.223.216.135:8080/api**
 
 ## Installation
 
@@ -123,7 +123,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://minfrontend.se", "http://localhost:5173")
+        policy.WithOrigins("http://159.223.216.135:8080", "http://localhost:5173")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
