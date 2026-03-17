@@ -65,7 +65,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
+    context.Database.Migrate(); // Kör migrations och skapar databasen om den inte finns
+
     if (!context.Users.Any(u => u.Role == "admin"))
     {
         context.Users.Add(new ReviewAPI.Models.User
