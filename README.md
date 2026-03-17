@@ -1,6 +1,6 @@
-# ReviewAPI
+# Backend FOLIO
 
-Backend REST API för Folio – en bokrecensionsplattform som hanterar sökning av böcker, bokrecensioner, favoriter och användare med JWT-autentisering och rollbaserad behörighet. Byggt med .NET Web API och SQLite.
+Backend REST API för FOLIO – en bokrecensionsplattform som hanterar sökning av böcker, bokrecensioner, favoriter och användare med JWT-autentisering och rollbaserad behörighet. Byggt med .NET Web API och SQLite.
 
 
 ## Länk
@@ -68,6 +68,9 @@ public class Favorite
 }
 ```
 
+### Relationer & Cascade Delete
+När en användare raderas tas även användarens recensioner och favoriter bort automatiskt via cascade delete.
+
 ## Användning
 
 ### Autentisering
@@ -111,10 +114,6 @@ API:et validerar inkommande data med Data Annotations:
 * `Rating` måste vara mellan 1 och 5.
 * En användare kan bara lämna en recension per bok.
 * Lösenord för användare måste vara minst 8 tecken och innehålla minst en siffra.
-
-### Cascade Delete
-
-När en användare raderas tas även användarens recensioner och favoriter bort automatiskt via cascade delete.
 
 ## CORS
 
