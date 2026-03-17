@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://159.223.216.135:8080", "http://localhost:5173")
+        policy.WithOrigins("https://folio.fridajansson.com", "http://localhost:5173")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });

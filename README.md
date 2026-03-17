@@ -5,7 +5,7 @@ Backend REST API för FOLIO – en bokrecensionsplattform som hanterar sökning 
 
 ## Länk
 
-En liveversion av API:et finns tillgänglig på följande URL: **http://159.223.216.135:8080/api**
+En liveversion av API:et finns tillgänglig på följande URL: **https://folio.fridajansson.com/api**
 
 ## Installation
 
@@ -123,7 +123,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://159.223.216.135:8080", "http://localhost:5173")
+        policy.WithOrigins("https://folio.fridajansson.com", "http://localhost:5173")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -147,3 +147,16 @@ dotnet publish -c Release -o ./publish
 ```
 
 Kopiera sedan `publish`-mappen till din server.
+
+### Produktionsinställningar
+
+* Connection string måste använda absolut sökväg i produktion. Uppdatera `appsettings.json` på servern:
+```json
+"DefaultConnection": "Data Source=/var/www/folio-api/reviewapi.db"
+```
+* `context.Database.Migrate()` körs automatiskt vid uppstart och skapar databasen och tabellerna om de inte finns.
+* JWT-inställningar ska inte versionshanteras – lägg till dem som miljövariabler i systemd-servicefilen på servern:
+```ini
+Environment=Jwt__Key=din-hemliga-nyckel
+Environment=Jwt__Issuer=ditt-issuer
+Environment=Jwt__Audience=din-audience
