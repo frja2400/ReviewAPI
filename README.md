@@ -5,7 +5,7 @@ Backend REST API för FOLIO – en bokrecensionsplattform som hanterar sökning 
 
 ## Länk
 
-En liveversion av API:et finns tillgänglig på följande URL: **https://folio.fridajansson.com/api**
+API:et är tillgängligt på: **https://folio.fridajansson.com/api**
 
 ## Installation
 
@@ -150,13 +150,16 @@ Kopiera sedan `publish`-mappen till din server.
 
 ### Produktionsinställningar
 
-* Connection string måste använda absolut sökväg i produktion. Uppdatera `appsettings.json` på servern:
-```json
-"DefaultConnection": "Data Source=/var/www/folio-api/reviewapi.db"
-```
-* `context.Database.Migrate()` körs automatiskt vid uppstart och skapar databasen och tabellerna om de inte finns.
-* JWT-inställningar ska inte versionshanteras – lägg till dem som miljövariabler i systemd-servicefilen på servern:
+* Connection string i `appsettings.json` måste använda absolut sökväg på servern: `Data Source=/var/www/folio-api/reviewapi.db`
+* Databasen skapas automatiskt vid uppstart via `context.Database.Migrate()`
+* JWT-inställningar versionshanteras inte – lägg till dem som miljövariabler i systemd-servicefilen:
 ```ini
 Environment=Jwt__Key=din-hemliga-nyckel
 Environment=Jwt__Issuer=ditt-issuer
 Environment=Jwt__Audience=din-audience
+```
+
+## Frontend
+
+Denna backend är byggd för att fungera med folio-project:
+**https://github.com/frja2400/folio-project**
